@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestiona +</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    window.firebase = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, orderBy };
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, Fragment } = React;
+    const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, orderBy } = window.firebase;
+
+    // A cor dos ícones depende de um ícone específico do Lucide React, mas para o contexto do código, deixaremos a classe fixa.
+    const Package = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m7.5 4.27h9l.52 1.44-5.02 1.81-5.02-1.81.52-1.44Z"/><path d="m4.5 10.37h15"/><path d="m12 15.37v6"/><path d="m19.5 10.37 2.25 6-9.75 3.5-9.75-3.5 2.25-6Z"/><path d="m3 14.37 9 3.25 9-3.25"/><path d="m7.5 4.27v6"/></svg>;
+    const Users = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    const Building = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9.5 10.5h.01"/><path d="M14.5 10.5h.01"/><path d="M9.5 14.5h.01"/><path d="M14.5 14.5h.01"/></svg>;
+    const DollarSign = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+    const FileText = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>;
+    const Warehouse = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 16.2A2 2 0 0 0 22 14V8a2 2 0 0 0-2-2h-1.5a.5.5 0 0 1 0-1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h1.5a.5.5 0 0 1 0 1H4a2 2 0 0 1-2-2V9.8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6.2Z"/><path d="M2 13v8"/><path d="M6 13v8"/><path d="M18 13v8"/><path d="M22 13v8"/></svg>;
+    const ShoppingCart = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>;
+    const TrendingUp = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
+    const Globe = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>;
+    const Factory = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7-3V2H9l-7 3V20z"/><path d="M12 22V12"/></svg>;
+    const LayoutDashboard = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
+    const ArrowRight = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+    const ArrowLeft = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>;
+    const Plus = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
+    const CheckCircle = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+    const Clock = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+    const Briefcase = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>;
+    const FileBadge2 = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 10V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2H4"/><path d="M14 2v6h6"/><path d="M16 13h-6a2 2 0 0 0-2 2v6l3-3 3 3V15a2 2 0 0 0-2-2z"/></svg>;
+
+    // Componente para um item da barra lateral
+    const SidebarItem = ({ icon: Icon, label, isActive, onClick }) => (
+      <button
+        className={`flex items-center w-full p-3 my-1 rounded-md transition-colors duration-200 ${
+          isActive
+            ? 'bg-blue-600 text-white shadow-lg'
+            : 'text-gray-300 hover:bg-gray-700'
+        }`}
+        onClick={onClick}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="ml-4 text-sm font-medium">{label}</span>
+      </button>
+    );
+
+    // Componente para um campo de formulário
+    const FormField = ({ label, type, name, value, onChange, placeholder, step, required, currencySymbol }) => (
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor={name}>
+          {label} {currencySymbol && <span className="text-gray-500 text-xs">({currencySymbol})</span>}
+        </label>
+        <input
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id={name}
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          step={step}
+          required={required}
+        />
+      </div>
+    );
+
+    // Componente principal da aplicação
+    const App = () => {
+      const [activeModule, setActiveModule] = useState('dashboard');
+      const [db, setDb] = useState(null);
+      const [userId, setUserId] = useState(null);
+      const [message, setMessage] = useState('');
+      const [isAddingOc, setIsAddingOc] = useState(false);
+      const [isAddingVenda, setIsAddingVenda] = useState(false);
+      const [isAddingImport, setIsAddingImport] = useState(false);
+      const [isAddingOp, setIsAddingOp] = useState(false);
+
+      // Estados para os dados dos formulários
+      const [productForm, setProductForm] = useState({ name: '', description: '', sku: '', costPrice: '', salePrice: '', minStock: '', supplier: '' });
+      const [clientForm, setClientForm] = useState({ name: '', cpfCnpj: '', stateRegistration: '', address: '', email: '', phone: '' });
+      const [supplierForm, setSupplierForm] = useState({ companyName: '', cnpj: '', stateRegistration: '', contactName: '', email: '', phone: '', address: '' });
+      const [financialForm, setFinancialForm] = useState({ description: '', amount: '', type: 'despesa', date: new Date().toISOString().substring(0, 10) });
+      const [fiscalForm, setFiscalForm] = useState({
+        invoiceNumber: '',
+        issueDate: new Date().toISOString().substring(0, 10),
+        recipient: '',
+        operationNature: '',
+        totalValue: '',
+        icms: '',
+        ipi: ''
+      });
+      const [stockForm, setStockForm] = useState({ productId: '', quantity: '', type: 'entrada', date: new Date().toISOString().substring(0, 10) });
+      const [purchaseOrderForm, setPurchaseOrderForm] = useState({
+        ocNumber: '',
+        supplierId: '',
+        purchaseType: 'nacional',
+        negotiationCurrency: 'BRL',
+        date: new Date().toISOString().substring(0, 10),
+        items: [{ productId: '', quantity: '', unitPrice: '' }],
+        paymentTerms: '',
+        deliveryDeadline: ''
+      });
+      const [salesOrderForm, setSalesOrderForm] = useState({
+        pedidoNumber: '',
+        clientId: '',
+        date: new Date().toISOString().substring(0, 10),
+        items: [{ productId: '', quantity: '', unitPrice: '' }],
+        paymentTerms: '',
+        deliveryDeadline: '',
+        status: 'Pendente'
+      });
+      const [importProcessForm, setImportProcessForm] = useState({
+        processNumber: '',
+        supplierId: '',
+        freightType: 'maritimo',
+        date: new Date().toISOString().substring(0, 10),
+        status: 'Em Andamento',
+        contracts: [{ number: '', date: '', value: '', currency: 'USD' }],
+        items: [{ productId: '', quantity: '', unitPrice: '' }]
+      });
+      const [productionOrderForm, setProductionOrderForm] = useState({
+        opNumber: '',
+        productToProduceId: '',
+        quantity: '',
+        startDate: new Date().toISOString().substring(0, 10),
+        endDate: '',
+        status: 'Pendente',
+        rawMaterials: [{ materialId: '', quantityNeeded: '' }]
+      });
+
+      // Estados para armazenar os dados do banco
+      const [products, setProducts] = useState([]);
+      const [clients, setClients] = useState([]);
+      const [suppliers, setSuppliers] = useState([]);
+      const [financialTransactions, setFinancialTransactions] = useState([]);
+      const [fiscalDocuments, setFiscalDocuments] = useState([]);
+      const [stockMovements, setStockMovements] = useState([]);
+      const [purchaseOrders, setPurchaseOrders] = useState([]);
+      const [salesOrders, setSalesOrders] = useState([]);
+      const [importProcesses, setImportProcesses] = useState([]);
+      const [productionOrders, setProductionOrders] = useState([]);
+
+      const purchaseOrderLabels = {
+        pt: {
+          ocNumber: 'Nº da Ordem de Compra',
+          supplier: 'Fornecedor',
+          purchaseType: 'Tipo de Compra',
+          date: 'Data',
+          items: 'Itens da OC',
+          addItem: 'Adicionar Item',
+          product: 'Produto',
+          quantity: 'Quantidade',
+          unitPrice: 'Preço Unitário',
+          total: 'Total do Item',
+          totalOC: 'Valor Total da OC',
+          paymentTerms: 'Condições de Pagamento',
+          deliveryDeadline: 'Prazo de Entrega',
+          submit: 'Emitir Ordem de Compra',
+          purchaseOrders: 'Ordens de Compra Emitidas',
+          supplierUnknown: 'Fornecedor Desconhecido',
+          productsUnknown: 'Produtos Desconhecidos',
+          negotiationCurrency: 'Moeda de Negociação',
+          purchaseTypes: [{ value: 'nacional', label: 'Nacional' }, { value: 'internacional', label: 'Internacional' }],
+          selectSupplier: 'Selecione um fornecedor',
+          selectProduct: 'Selecione um produto'
+        },
+        en: {
+          ocNumber: 'Purchase Order No.',
+          supplier: 'Supplier',
+          purchaseType: 'Purchase Type',
+          date: 'Date',
+          items: 'PO Items',
+          addItem: 'Add Item',
+          product: 'Product',
+          quantity: 'Quantity',
+          unitPrice: 'Unit Price',
+          total: 'Item Total',
+          totalOC: 'Total PO Value',
+          paymentTerms: 'Payment Terms',
+          deliveryDeadline: 'Delivery Deadline',
+          submit: 'Submit Purchase Order',
+          purchaseOrders: 'Issued Purchase Orders',
+          supplierUnknown: 'Unknown Supplier',
+          productsUnknown: 'Unknown Products',
+          negotiationCurrency: 'Negotiation Currency',
+          purchaseTypes: [{ value: 'nacional', label: 'Domestic' }, { value: 'internacional', label: 'International' }],
+          selectSupplier: 'Select a supplier',
+          selectProduct: 'Select a product'
+        }
+      };
+
+      const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+      };
+      
+      const formatInternationalCurrency = (value, currencyCode) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode }).format(value);
+      };
+
+      const calculateStockLevel = (productId) => {
+        const movements = stockMovements.filter(m => m.productId === productId);
+        return movements.reduce((total, movement) => {
+          const quantity = parseInt(movement.quantity, 10);
+          return movement.type === 'entrada' ? total + quantity : total - quantity;
+        }, 0);
+      };
+
+      useEffect(() => {
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        if (Object.keys(firebaseConfig).length === 0) {
+          console.error('Firebase config is not available.');
+          return;
+        }
+
+        try {
+          const app = initializeApp(firebaseConfig);
+          const firestore = getFirestore(app);
+          const auth = getAuth(app);
+          setDb(firestore);
+
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              setUserId(user.uid);
+            } else {
+              try {
+                if (initialAuthToken) {
+                  await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                  await signInAnonymously(auth);
+                }
+                setUserId(auth.currentUser?.uid || `anon-${crypto.randomUUID()}`);
+              } catch (error) {
+                console.error("Failed to sign in:", error);
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Failed to initialize Firebase:', error);
+        }
+      }, []);
+
+      useEffect(() => {
+        if (!db || !userId) return;
+
+        const productsPath = `/artifacts/${__app_id}/users/${userId}/products`;
+        const productsQuery = query(collection(db, productsPath));
+        const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+          const newProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setProducts(newProducts);
+        });
+
+        const clientsPath = `/artifacts/${__app_id}/users/${userId}/clients`;
+        const clientsQuery = query(collection(db, clientsPath));
+        const unsubscribeClients = onSnapshot(clientsQuery, (snapshot) => {
+          const newClients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setClients(newClients);
+        });
+
+        const suppliersPath = `/artifacts/${__app_id}/users/${userId}/suppliers`;
+        const suppliersQuery = query(collection(db, suppliersPath));
+        const unsubscribeSuppliers = onSnapshot(suppliersQuery, (snapshot) => {
+          const newSuppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSuppliers(newSuppliers);
+        });
+
+        const financialPath = `/artifacts/${__app_id}/users/${userId}/financial-transactions`;
+        const financialQuery = query(collection(db, financialPath), orderBy('date', 'desc'));
+        const unsubscribeFinancial = onSnapshot(financialQuery, (snapshot) => {
+          const newTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setFinancialTransactions(newTransactions);
+        });
+
+        const fiscalPath = `/artifacts/${__app_id}/users/${userId}/fiscal-documents`;
+        const fiscalQuery = query(collection(db, fiscalPath), orderBy('issueDate', 'desc'));
+        const unsubscribeFiscal = onSnapshot(fiscalQuery, (snapshot) => {
+          const newDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setFiscalDocuments(newDocs);
+        });
+
+        const stockPath = `/artifacts/${__app_id}/users/${userId}/stock-movements`;
+        const stockQuery = query(collection(db, stockPath), orderBy('date', 'desc'));
+        const unsubscribeStock = onSnapshot(stockQuery, (snapshot) => {
+          const newMovements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setStockMovements(newMovements);
+        });
+
+        const purchasePath = `/artifacts/${__app_id}/users/${userId}/purchase-orders`;
+        const purchaseQuery = query(collection(db, purchasePath), orderBy('date', 'desc'));
+        const unsubscribePurchase = onSnapshot(purchaseQuery, (snapshot) => {
+          const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setPurchaseOrders(newOrders);
+        });
+
+        const salesPath = `/artifacts/${__app_id}/users/${userId}/sales-orders`;
+        const salesQuery = query(collection(db, salesPath), orderBy('date', 'desc'));
+        const unsubscribeSales = onSnapshot(salesQuery, (snapshot) => {
+          const newSales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSalesOrders(newSales);
+        });
+
+        const importPath = `/artifacts/${__app_id}/users/${userId}/import-processes`;
+        const importQuery = query(collection(db, importPath), orderBy('date', 'desc'));
+        const unsubscribeImport = onSnapshot(importQuery, (snapshot) => {
+          const newImports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setImportProcesses(newImports);
+        });
+
+        const productionPath = `/artifacts/${__app_id}/users/${userId}/production-orders`;
+        const productionQuery = query(collection(db, productionPath), orderBy('startDate', 'desc'));
+        const unsubscribeProduction = onSnapshot(productionQuery, (snapshot) => {
+          const newProductionOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setProductionOrders(newProductionOrders);
+        });
+
+        return () => {
+          unsubscribeProducts();
+          unsubscribeClients();
+          unsubscribeSuppliers();
+          unsubscribeFinancial();
+          unsubscribeFiscal();
+          unsubscribeStock();
+          unsubscribePurchase();
+          unsubscribeSales();
+          unsubscribeImport();
+          unsubscribeProduction();
+        };
+      }, [db, userId]);
+
+      const handleProductChange = (e) => {
+        setProductForm({ ...productForm, [e.target.name]: e.target.value });
+      };
+      const handleClientChange = (e) => {
+        setClientForm({ ...clientForm, [e.target.name]: e.target.value });
+      };
+      const handleSupplierChange = (e) => {
+        setSupplierForm({ ...supplierForm, [e.target.name]: e.target.value });
+      };
+      const handleFinancialChange = (e) => {
+        setFinancialForm({ ...financialForm, [e.target.name]: e.target.value });
+      };
+      const handleFiscalChange = (e) => {
+        setFiscalForm({ ...fiscalForm, [e.target.name]: e.target.value });
+      };
+      const handleStockChange = (e) => {
+        setStockForm({ ...stockForm, [e.target.name]: e.target.value });
+      };
+      const handlePurchaseOrderChange = (e) => {
+        const { name, value } = e.target;
+        let updatedForm = { ...purchaseOrderForm, [name]: value };
+        if (name === 'purchaseType' && value === 'nacional') {
+          updatedForm.negotiationCurrency = 'BRL';
+        }
+        setPurchaseOrderForm(updatedForm);
+      };
+      const handlePurchaseOrderItemChange = (index, e) => {
+        const { name, value } = e.target;
+        const items = [...purchaseOrderForm.items];
+        items[index][name] = value;
+        if (name === 'quantity' || name === 'unitPrice') {
+          const quantity = parseFloat(items[index].quantity) || 0;
+          const unitPrice = parseFloat(items[index].unitPrice) || 0;
+          items[index].total = quantity * unitPrice;
+        }
+        setPurchaseOrderForm({ ...purchaseOrderForm, items });
+      };
+      const handleAddItem = () => {
+        setPurchaseOrderForm({
+          ...purchaseOrderForm,
+          items: [...purchaseOrderForm.items, { productId: '', quantity: '', unitPrice: '' }]
+        });
+      };
+      const handleSalesOrderChange = (e) => {
+        const { name, value } = e.target;
+        setSalesOrderForm({ ...salesOrderForm, [name]: value });
+      };
+      const handleSalesOrderItemChange = (index, e) => {
+        const { name, value } = e.target;
+        const items = [...salesOrderForm.items];
+        items[index][name] = value;
+        if (name === 'quantity') {
+          const product = products.find(p => p.id === items[index].productId);
+          if (product) {
+            items[index].unitPrice = product.salePrice;
+            const quantity = parseFloat(items[index].quantity) || 0;
+            const unitPrice = parseFloat(items[index].unitPrice) || 0;
+            items[index].total = quantity * unitPrice;
+          }
+        } else if (name === 'productId') {
+          const product = products.find(p => p.id === value);
+          if (product) {
+            items[index].unitPrice = product.salePrice;
+            const quantity = parseFloat(items[index].quantity) || 0;
+            const unitPrice = parseFloat(items[index].unitPrice) || 0;
+            items[index].total = quantity * unitPrice;
+          }
+        }
+        setSalesOrderForm({ ...salesOrderForm, items });
+      };
+      const handleAddSalesItem = () => {
+        setSalesOrderForm({
+          ...salesOrderForm,
+          items: [...salesOrderForm.items, { productId: '', quantity: '', unitPrice: '' }]
+        });
+      };
+      const handleImportProcessChange = (e) => {
+        const { name, value } = e.target;
+        setImportProcessForm({ ...importProcessForm, [name]: value });
+      };
+      const handleImportItemChange = (index, e) => {
+        const { name, value } = e.target;
+        const items = [...importProcessForm.items];
+        items[index][name] = value;
+        if (name === 'quantity' || name === 'unitPrice') {
+          const quantity = parseFloat(items[index].quantity) || 0;
+          const unitPrice = parseFloat(items[index].unitPrice) || 0;
+          items[index].total = quantity * unitPrice;
+        }
+        setImportProcessForm({ ...importProcessForm, items });
+      };
+      const handleAddImportItem = () => {
+        setImportProcessForm({
+          ...importProcessForm,
+          items: [...importProcessForm.items, { productId: '', quantity: '', unitPrice: '' }]
+        });
+      };
+      const handleImportContractChange = (index, e) => {
+        const { name, value } = e.target;
+        const contracts = [...importProcessForm.contracts];
+        contracts[index][name] = value;
+        setImportProcessForm({ ...importProcessForm, contracts });
+      };
+      const handleAddImportContract = () => {
+        setImportProcessForm({
+          ...importProcessForm,
+          contracts: [...importProcessForm.contracts, { number: '', date: '', value: '', currency: 'USD' }]
+        });
+      };
+      const handleProductionOrderChange = (e) => {
+        const { name, value } = e.target;
+        setProductionOrderForm({ ...productionOrderForm, [name]: value });
+      };
+      const handleRawMaterialChange = (index, e) => {
+        const { name, value } = e.target;
+        const rawMaterials = [...productionOrderForm.rawMaterials];
+        rawMaterials[index][name] = value;
+        setProductionOrderForm({ ...productionOrderForm, rawMaterials });
+      };
+      const handleAddRawMaterial = () => {
+        setProductionOrderForm({
+          ...productionOrderForm,
+          rawMaterials: [...productionOrderForm.rawMaterials, { materialId: '', quantityNeeded: '' }]
+        });
+      };
+
+      const handleSubmitProduct = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) return;
+        try {
+          const productsPath = `/artifacts/${__app_id}/users/${userId}/products`;
+          await addDoc(collection(db, productsPath), productForm);
+          setMessage("Produto adicionado com sucesso!");
+          setProductForm({ name: '', description: '', sku: '', costPrice: '', salePrice: '', minStock: '', supplier: '' });
+        } catch (e) {
+          console.error("Erro ao adicionar o produto: ", e);
+          setMessage("Erro ao adicionar o produto.");
+        }
+      };
+
+      const handleSubmitClient = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) return;
+        try {
+          const clientsPath = `/artifacts/${__app_id}/users/${userId}/clients`;
+          await addDoc(collection(db, clientsPath), clientForm);
+          setMessage("Cliente adicionado com sucesso!");
+          setClientForm({ name: '', cpfCnpj: '', stateRegistration: '', address: '', email: '', phone: '' });
+        } catch (e) {
+          console.error("Erro ao adicionar o cliente: ", e);
+          setMessage("Erro ao adicionar o cliente.");
+        }
+      };
+
+      const handleSubmitSupplier = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) return;
+        try {
+          const suppliersPath = `/artifacts/${__app_id}/users/${userId}/suppliers`;
+          await addDoc(collection(db, suppliersPath), supplierForm);
+          setMessage("Fornecedor adicionado com sucesso!");
+          setSupplierForm({ companyName: '', cnpj: '', stateRegistration: '', contactName: '', email: '', phone: '', address: '' });
+        } catch (e) {
+          console.error("Erro ao adicionar o fornecedor: ", e);
+          setMessage("Erro ao adicionar o fornecedor.");
+        }
+      };
+
+      const handleSubmitFinancial = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) return;
+        try {
+          const financialPath = `/artifacts/${__app_id}/users/${userId}/financial-transactions`;
+          await addDoc(collection(db, financialPath), { ...financialForm, amount: parseFloat(financialForm.amount) });
+          setMessage("Transação adicionada com sucesso!");
+          setFinancialForm({ description: '', amount: '', type: 'despesa', date: new Date().toISOString().substring(0, 10) });
+        } catch (e) {
+          console.error("Erro ao adicionar a transação: ", e);
+          setMessage("Erro ao adicionar a transação.");
+        }
+      };
+
+      const handleSubmitFiscal = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) return;
+        try {
+          const fiscalPath = `/artifacts/${__app_id}/users/${userId}/fiscal-documents`;
+          await addDoc(collection(db, fiscalPath), { ...fiscalForm, totalValue: parseFloat(fiscalForm.totalValue) });
+          setMessage("Nota fiscal emitida com sucesso!");
+          setFiscalForm({ invoiceNumber: '', issueDate: new Date().toISOString().substring(0, 10), recipient: '', operationNature: '', totalValue: '', icms: '', ipi: '' });
+        } catch (e) {
+          console.error("Erro ao emitir a nota fiscal: ", e);
+          setMessage("Erro ao emitir a nota fiscal.");
+        }
+      };
+
+      const handleSubmitStock = async (e) => {
+        e.preventDefault();
+        if (!db || !userId || !stockForm.productId || stockForm.quantity <= 0) {
+          setMessage("Por favor, preencha todos os campos do formulário de estoque.");
+          return;
+        }
+        try {
+          const stockPath = `/artifacts/${__app_id}/users/${userId}/stock-movements`;
+          await addDoc(collection(db, stockPath), {
+            ...stockForm,
+            quantity: parseInt(stockForm.quantity, 10),
+            timestamp: new Date().toISOString()
+          });
+          setMessage("Movimentação de estoque registrada com sucesso!");
+          setStockForm({ productId: '', quantity: '', type: 'entrada', date: new Date().toISOString().substring(0, 10) });
+        } catch (e) {
+          console.error("Erro ao registrar a movimentação de estoque: ", e);
+          setMessage("Erro ao registrar a movimentação de estoque.");
+        }
+      };
+
+      const handleSubmitPurchaseOrder = async (e) => {
+        e.preventDefault();
+        if (!db || !userId || !purchaseOrderForm.ocNumber || !purchaseOrderForm.supplierId) {
+          setMessage("Por favor, preencha todos os campos obrigatórios da OC.");
+          return;
+        }
+        try {
+          const purchasePath = `/artifacts/${__app_id}/users/${userId}/purchase-orders`;
+          const totalValue = purchaseOrderForm.items.reduce((sum, item) => sum + (item.total || 0), 0);
+          await addDoc(collection(db, purchasePath), {
+            ...purchaseOrderForm,
+            totalValue,
+            createdAt: new Date().toISOString()
+          });
+          setMessage("Ordem de Compra emitida com sucesso!");
+          setIsAddingOc(false);
+          setPurchaseOrderForm({
+            ocNumber: '',
+            supplierId: '',
+            purchaseType: 'nacional',
+            negotiationCurrency: 'BRL',
+            date: new Date().toISOString().substring(0, 10),
+            items: [{ productId: '', quantity: '', unitPrice: '' }],
+            paymentTerms: '',
+            deliveryDeadline: ''
+          });
+        } catch (e) {
+          console.error("Erro ao emitir a Ordem de Compra: ", e);
+          setMessage("Erro ao emitir a Ordem de Compra.");
+        }
+      };
+
+      const handleSubmitSalesOrder = async (e) => {
+        e.preventDefault();
+        if (!db || !userId || !salesOrderForm.pedidoNumber || !salesOrderForm.clientId) {
+          setMessage("Por favor, preencha todos os campos obrigatórios do Pedido de Venda.");
+          return;
+        }
+        try {
+          const salesPath = `/artifacts/${__app_id}/users/${userId}/sales-orders`;
+          const totalValue = salesOrderForm.items.reduce((sum, item) => sum + (item.total || 0), 0);
+          await addDoc(collection(db, salesPath), {
+            ...salesOrderForm,
+            totalValue,
+            createdAt: new Date().toISOString()
+          });
+          setMessage("Pedido de Venda criado com sucesso!");
+          setIsAddingVenda(false);
+          setSalesOrderForm({
+            pedidoNumber: '',
+            clientId: '',
+            date: new Date().toISOString().substring(0, 10),
+            items: [{ productId: '', quantity: '', unitPrice: '' }],
+            paymentTerms: '',
+            deliveryDeadline: '',
+            status: 'Pendente'
+          });
+        } catch (e) {
+          console.error("Erro ao criar o Pedido de Venda: ", e);
+          setMessage("Erro ao criar o Pedido de Venda.");
+        }
+      };
+
+      const handleApproveSalesOrder = async (orderId) => {
+        if (!db || !userId) return;
+        try {
+          const docRef = doc(db, `/artifacts/${__app_id}/users/${userId}/sales-orders`, orderId);
+          await setDoc(docRef, { status: 'Aprovado' }, { merge: true });
+          setMessage("Pedido de Venda aprovado com sucesso!");
+        } catch (e) {
+          console.error("Erro ao aprovar o pedido: ", e);
+          setMessage("Erro ao aprovar o pedido.");
+        }
+      };
+
+      const handleSubmitImportProcess = async (e) => {
+        e.preventDefault();
+        if (!db || !userId || !importProcessForm.processNumber || !importProcessForm.supplierId) {
+          setMessage("Por favor, preencha todos os campos obrigatórios do Processo de Importação.");
+          return;
+        }
+        try {
+          const importPath = `/artifacts/${__app_id}/users/${userId}/import-processes`;
+          await addDoc(collection(db, importPath), {
+            ...importProcessForm,
+            createdAt: new Date().toISOString()
+          });
+          setMessage("Processo de Importação criado com sucesso!");
+          setIsAddingImport(false);
+          setImportProcessForm({
+            processNumber: '',
+            supplierId: '',
+            freightType: 'maritimo',
+            date: new Date().toISOString().substring(0, 10),
+            status: 'Em Andamento',
+            contracts: [{ number: '', date: '', value: '', currency: 'USD' }],
+            items: [{ productId: '', quantity: '', unitPrice: '' }]
+          });
+        } catch (e) {
+          console.error("Erro ao criar o Processo de Importação: ", e);
+          setMessage("Erro ao criar o Processo de Importação.");
+        }
+      };
+
+      const handleFinalizeImportProcess = async (processId) => {
+        if (!db || !userId) return;
+        try {
+          const processRef = doc(db, `/artifacts/${__app_id}/users/${userId}/import-processes`, processId);
+          const process = importProcesses.find(p => p.id === processId);
+
+          const totalContractsValue = process.contracts.reduce((sum, contract) => {
+            const exchangeRate = { USD: 5.0, EUR: 6.0, CNY: 0.7 };
+            return sum + (parseFloat(contract.value) || 0) * (exchangeRate[contract.currency] || 1);
+          }, 0);
+
+          const itemsTotalValue = process.items.reduce((sum, item) => sum + (parseFloat(item.unitPrice) * parseFloat(item.quantity)), 0);
+
+          const totalProcessCost = totalContractsValue + itemsTotalValue;
+          const totalItemsQuantity = process.items.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+          const costPerItem = totalItemsQuantity > 0 ? totalProcessCost / totalItemsQuantity : 0;
+          
+          console.log(`Processo ${process.processNumber} finalizado. Custo total: ${totalProcessCost}. Custo por item: ${costPerItem}`);
+          
+          await setDoc(processRef, { status: 'Finalizado', finalCost: totalProcessCost, costPerItem }, { merge: true });
+
+          process.items.forEach(async item => {
+            await addDoc(collection(db, `/artifacts/${__app_id}/users/${userId}/stock-movements`), {
+              productId: item.productId,
+              quantity: parseInt(item.quantity, 10),
+              type: 'entrada',
+              date: new Date().toISOString().substring(0, 10),
+              source: `Importação ${process.processNumber}`
+            });
+          });
+
+          setMessage(`Processo de importação ${process.processNumber} finalizado. Custo por item calculado.`);
+        } catch (e) {
+          console.error("Erro ao finalizar o processo de importação: ", e);
+          setMessage("Erro ao finalizar o processo.");
+        }
+      };
+
+      const handleSubmitProductionOrder = async (e) => {
+        e.preventDefault();
+        if (!db || !userId || !productionOrderForm.opNumber || !productionOrderForm.productToProduceId) {
+          setMessage("Por favor, preencha todos os campos obrigatórios da Ordem de Produção.");
+          return;
+        }
+        try {
+          const productionPath = `/artifacts/${__app_id}/users/${userId}/production-orders`;
+          await addDoc(collection(db, productionPath), {
+            ...productionOrderForm,
+            quantity: parseInt(productionOrderForm.quantity, 10),
+            createdAt: new Date().toISOString()
+          });
+          setMessage("Ordem de Produção emitida com sucesso!");
+          setIsAddingOp(false);
+          setProductionOrderForm({
+            opNumber: '',
+            productToProduceId: '',
+            quantity: '',
+            startDate: new Date().toISOString().substring(0, 10),
+            endDate: '',
+            status: 'Pendente',
+            rawMaterials: [{ materialId: '', quantityNeeded: '' }]
+          });
+        } catch (e) {
+          console.error("Erro ao emitir a Ordem de Produção: ", e);
+          setMessage("Erro ao emitir a Ordem de Produção.");
+        }
+      };
+
+      const handleFileImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const text = event.target.result;
+          const lines = text.split('\n');
+          const transactions = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const [description, amount, type, date] = line.split(',');
+            transactions.push({
+              description: description.trim(),
+              amount: parseFloat(amount),
+              type: type.trim(),
+              date: date.trim()
+            });
+          }
+
+          if (!db || !userId) return;
+          try {
+            const financialPath = `/artifacts/${__app_id}/users/${userId}/financial-transactions`;
+            const batch = [];
+            transactions.forEach(t => {
+              batch.push(addDoc(collection(db, financialPath), t));
+            });
+            await Promise.all(batch);
+            setMessage(`Importação de ${transactions.length} transações concluída!`);
+          } catch (e) {
+            console.error("Erro ao importar o arquivo:", e);
+            setMessage("Erro ao importar o arquivo.");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      const modules = [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'cadastro', label: 'Cadastro', icon: Package, sub: [
+            { id: 'produtos', label: 'Produtos' },
+            { id: 'clientes', label: 'Clientes' },
+            { id: 'fornecedores', label: 'Fornecedores' }
+          ]
+        },
+        { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
+        { id: 'fiscal', label: 'Fiscal', icon: FileText },
+        { id: 'estoque', label: 'Estoque', icon: Warehouse },
+        { id: 'compras', label: 'Compras', icon: ShoppingCart },
+        { id: 'vendas', label: 'Vendas', icon: TrendingUp },
+        { id: 'importacao', label: 'Importação', icon: Globe },
+        { id: 'producao', label: 'Produção', icon: Factory },
+      ];
+
+      const renderContent = () => {
+        const purchaseLabels = purchaseOrderLabels[purchaseOrderForm.purchaseType === 'nacional' ? 'pt' : 'en'];
+        const totalOC = purchaseOrderForm.items.reduce((sum, item) => sum + (item.total || 0), 0);
+        const ocCurrencyFormatter = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: purchaseOrderForm.negotiationCurrency,
+            currencyDisplay: 'code'
+        });
+        const salesCurrencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        switch (activeModule) {
+          case 'dashboard':
+            return (
+              <div className="text-center">
+                <h1 className="text-5xl font-extrabold text-blue-600">Gestiona +</h1>
+                <p className="mt-4 text-xl font-medium text-gray-700">Seu negócio gerido de maneira simples.</p>
+              </div>
+            );
+          case 'cadastro':
+          case 'produtos':
+            return (
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/2">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4">Cadastro de Produtos</h2>
+                  <form onSubmit={handleSubmitProduct} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Nome do Produto" type="text" name="name" value={productForm.name} onChange={handleProductChange} placeholder="Ex: Câmera Digital" required />
+                    <FormField label="Descrição" type="text" name="description" value={productForm.description} onChange={handleProductChange} placeholder="Ex: Câmera profissional 4K" />
+                    <FormField label="SKU" type="text" name="sku" value={productForm.sku} onChange={handleProductChange} placeholder="Ex: CAM-PRO-4K" />
+                    <FormField label="Preço de Custo (R$)" type="number" name="costPrice" value={productForm.costPrice} onChange={handleProductChange} placeholder="Ex: 500" step="0.01" />
+                    <FormField label="Preço de Venda (R$)" type="number" name="salePrice" value={productForm.salePrice} onChange={handleProductChange} placeholder="Ex: 750" step="0.01" />
+                    <FormField label="Estoque Mínimo" type="number" name="minStock" value={productForm.minStock} onChange={handleProductChange} placeholder="Ex: 10" />
+                    <FormField label="Fornecedor" type="text" name="supplier" value={productForm.supplier} onChange={handleProductChange} placeholder="Ex: Tech Global Imports" />
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Cadastrar Produto
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div className="w-full md:w-1/2">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Produtos Cadastrados</h3>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  <ul className="list-disc pl-5">
+                    {products.length > 0 ? (
+                      products.map((p) => (
+                        <li key={p.id} className="mb-2 p-3 bg-gray-100 rounded-lg shadow-sm">
+                          <p className="font-semibold">{p.name} ({p.sku})</p>
+                          <p className="text-sm text-gray-600">Fornecedor: {p.supplier}</p>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">Nenhum produto cadastrado ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'clientes':
+            return (
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/2">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4">Cadastro de Clientes</h2>
+                  <form onSubmit={handleSubmitClient} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Nome Completo" type="text" name="name" value={clientForm.name} onChange={handleClientChange} placeholder="Ex: João da Silva" required />
+                    <FormField label="CPF / CNPJ" type="text" name="cpfCnpj" value={clientForm.cpfCnpj} onChange={handleClientChange} placeholder="Ex: 123.456.789-00" />
+                    <FormField label="Inscrição Estadual" type="text" name="stateRegistration" value={clientForm.stateRegistration} onChange={handleClientChange} placeholder="Ex: Isento ou 123.456.78-9" />
+                    <FormField label="Endereço" type="text" name="address" value={clientForm.address} onChange={handleClientChange} placeholder="Ex: Rua das Flores, 123" />
+                    <FormField label="Email" type="email" name="email" value={clientForm.email} onChange={handleClientChange} placeholder="Ex: joao@email.com" />
+                    <FormField label="Telefone" type="text" name="phone" value={clientForm.phone} onChange={handleClientChange} placeholder="Ex: (11) 99999-9999" />
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Cadastrar Cliente
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div className="w-full md:w-1/2">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Clientes Cadastrados</h3>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  <ul className="list-disc pl-5">
+                    {clients.length > 0 ? (
+                      clients.map((c) => (
+                        <li key={c.id} className="mb-2 p-3 bg-gray-100 rounded-lg shadow-sm">
+                          <p className="font-semibold">{c.name}</p>
+                          <p className="text-sm text-gray-600">Email: {c.email}</p>
+                          <p className="text-sm text-gray-600">Inscrição Estadual: {c.stateRegistration}</p>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">Nenhum cliente cadastrado ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'fornecedores':
+            return (
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/2">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4">Cadastro de Fornecedores</h2>
+                  <form onSubmit={handleSubmitSupplier} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Nome da Empresa" type="text" name="companyName" value={supplierForm.companyName} onChange={handleSupplierChange} placeholder="Ex: Tech Global Imports" required />
+                    <FormField label="CNPJ" type="text" name="cnpj" value={supplierForm.cnpj} onChange={handleSupplierChange} placeholder="Ex: 00.000.000/0001-00" />
+                    <FormField label="Inscrição Estadual" type="text" name="stateRegistration" value={supplierForm.stateRegistration} onChange={handleSupplierChange} placeholder="Ex: 123.456.78-9" />
+                    <FormField label="Nome do Contato" type="text" name="contactName" value={supplierForm.contactName} onChange={handleSupplierChange} placeholder="Ex: Maria Santos" />
+                    <FormField label="Email" type="email" name="email" value={supplierForm.email} onChange={handleSupplierChange} placeholder="Ex: contato@techglobal.com" />
+                    <FormField label="Telefone" type="text" name="phone" value={supplierForm.phone} onChange={handleSupplierChange} placeholder="Ex: (11) 5555-4444" />
+                    <FormField label="Endereço" type="text" name="address" value={supplierForm.address} onChange={handleSupplierChange} placeholder="Ex: Av. Principal, 1000" />
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Cadastrar Fornecedor
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div className="w-full md:w-1/2">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Fornecedores Cadastrados</h3>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  <ul className="list-disc pl-5">
+                    {suppliers.length > 0 ? (
+                      suppliers.map((s) => (
+                        <li key={s.id} className="mb-2 p-3 bg-gray-100 rounded-lg shadow-sm">
+                          <p className="font-semibold">{s.companyName}</p>
+                          <p className="text-sm text-gray-600">Contato: {s.contactName}</p>
+                          <p className="text-sm text-gray-600">Inscrição Estadual: {s.stateRegistration}</p>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">Nenhum fornecedor cadastrado ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'financeiro':
+            const total = financialTransactions.reduce((acc, trans) => acc + (trans.type === 'receita' ? trans.amount : -trans.amount), 0);
+            const totalColor = total >= 0 ? 'text-green-600' : 'text-red-600';
+            return (
+              <div className="flex flex-col gap-8">
+                <h2 className="text-3xl font-bold text-gray-800">Módulo Financeiro</h2>
+                <div className="flex flex-col md:flex-row gap-8">
+                  <div className="w-full md:w-1/2">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Lançamento Manual</h3>
+                    <form onSubmit={handleSubmitFinancial} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                      <FormField label="Descrição" type="text" name="description" value={financialForm.description} onChange={handleFinancialChange} placeholder="Ex: Venda de produtos" required />
+                      <FormField label="Valor (R$)" type="number" name="amount" value={financialForm.amount} onChange={handleFinancialChange} placeholder="Ex: 1500.50" step="0.01" required />
+                      <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                          Tipo de Transação
+                        </label>
+                        <select
+                          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          name="type"
+                          value={financialForm.type}
+                          onChange={handleFinancialChange}
+                        >
+                          <option value="despesa">Despesa</option>
+                          <option value="receita">Receita</option>
+                        </select>
+                      </div>
+                      <FormField label="Data" type="date" name="date" value={financialForm.date} onChange={handleFinancialChange} required />
+                      <div className="flex items-center justify-between mt-6">
+                        <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                          Lançar Transação
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                  <div className="w-full md:w-1/2">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Importar Extrato (CSV)</h3>
+                    <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                      <p className="mb-4 text-sm text-gray-700">
+                        Importe um arquivo .csv com o formato: `descrição,valor,tipo,data` (ex: `Venda,1500.50,receita,2023-10-27`).
+                      </p>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileImport}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p className="mt-4 text-sm text-gray-500">
+                        O status da importação aparecerá aqui: {message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Transações</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Saldo Total: <span className={`font-bold ${totalColor}`}>{formatCurrency(total)}</span>
+                  </p>
+                  <ul className="space-y-4">
+                    {financialTransactions.length > 0 ? (
+                      financialTransactions.map((t) => (
+                        <li key={t.id} className={`p-4 rounded-lg shadow-sm flex justify-between items-center ${t.type === 'receita' ? 'bg-green-50' : 'bg-red-50'}`}>
+                          <div>
+                            <p className="font-semibold">{t.description}</p>
+                            <p className="text-sm text-gray-600">Data: {t.date}</p>
+                          </div>
+                          <p className={`font-bold ${t.type === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
+                            {t.type === 'despesa' ? '-' : ''}{formatCurrency(t.amount)}
+                          </p>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">Nenhuma transação registrada ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'fiscal':
+            return (
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/2">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4">Emissão de Nota Fiscal</h2>
+                  <form onSubmit={handleSubmitFiscal} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Número da Nota" type="text" name="invoiceNumber" value={fiscalForm.invoiceNumber} onChange={handleFiscalChange} placeholder="Ex: 123456" required />
+                    <FormField label="Data de Emissão" type="date" name="issueDate" value={fiscalForm.issueDate} onChange={handleFiscalChange} required />
+                    <FormField label="Destinatário" type="text" name="recipient" value={fiscalForm.recipient} onChange={handleFiscalChange} placeholder="Ex: João da Silva" required />
+                    <FormField label="Natureza da Operação" type="text" name="operationNature" value={fiscalForm.operationNature} onChange={handleFiscalChange} placeholder="Ex: Venda de Mercadoria" required />
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Valores e Impostos</h4>
+                    <FormField label="Valor Total da Nota (R$)" type="number" name="totalValue" value={fiscalForm.totalValue} onChange={handleFiscalChange} placeholder="Ex: 2500.00" step="0.01" required />
+                    <FormField label="ICMS (%)" type="number" name="icms" value={fiscalForm.icms} onChange={handleFiscalChange} placeholder="Ex: 18" step="0.01" />
+                    <FormField label="IPI (%)" type="number" name="ipi" value={fiscalForm.ipi} onChange={handleFiscalChange} placeholder="Ex: 10" step="0.01" />
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Emitir Nota Fiscal
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div className="w-full md:w-1/2">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Notas Fiscais Emitidas</h3>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  <ul className="space-y-4">
+                    {fiscalDocuments.length > 0 ? (
+                      fiscalDocuments.map((doc) => (
+                        <li key={doc.id} className="p-4 rounded-lg shadow-sm bg-gray-50">
+                          <p className="font-semibold">Nota: {doc.invoiceNumber} ({doc.operationNature})</p>
+                          <p className="text-sm text-gray-600">Destinatário: {doc.recipient}</p>
+                          <p className="text-sm text-gray-600">Data: {doc.issueDate}</p>
+                          <p className="font-bold text-lg mt-2">{formatCurrency(doc.totalValue)}</p>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">Nenhuma nota fiscal emitida ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'estoque':
+            return (
+              <div className="flex flex-col gap-8">
+                <h2 className="text-3xl font-bold text-gray-800">Módulo de Estoque</h2>
+                <p className="mt-4 text-gray-600">
+                  Gerencie o inventário da sua empresa. Use o formulário abaixo para registrar movimentações.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-8">
+                  <div className="w-full md:w-1/2">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Dashboard de Inventário</h3>
+                    <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                      <ul className="space-y-3">
+                        {products.length > 0 ? (
+                          products.map((p) => {
+                            const stockLevel = calculateStockLevel(p.id);
+                            const isLowStock = stockLevel < p.minStock;
+                            return (
+                              <li
+                                key={p.id}
+                                className={`p-3 rounded-lg flex justify-between items-center ${isLowStock ? 'bg-red-100 border-l-4 border-red-500' : 'bg-white'}`}
+                              >
+                                <div>
+                                  <p className="font-semibold">{p.name} ({p.sku})</p>
+                                  {isLowStock && (
+                                    <p className="text-sm text-red-500 font-bold">Estoque Baixo!</p>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-xl">{stockLevel}</p>
+                                  <p className="text-xs text-gray-500">Mínimo: {p.minStock}</p>
+                                </div>
+                              </li>
+                            );
+                          })
+                        ) : (
+                          <p className="text-gray-500">Nenhum produto cadastrado para exibir no estoque.</p>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="w-full md:w-1/2">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Registrar Movimentação</h3>
+                    <form onSubmit={handleSubmitStock} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                      <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="productId">
+                          Produto
+                        </label>
+                        <select
+                          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          id="productId"
+                          name="productId"
+                          value={stockForm.productId}
+                          onChange={handleStockChange}
+                          required
+                        >
+                          <option value="">Selecione um produto</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <FormField label="Quantidade" type="number" name="quantity" value={stockForm.quantity} onChange={handleStockChange} placeholder="Ex: 50" required />
+                      <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                          Tipo de Movimentação
+                        </label>
+                        <select
+                          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          name="type"
+                          value={stockForm.type}
+                          onChange={handleStockChange}
+                        >
+                          <option value="entrada">Entrada</option>
+                          <option value="saida">Saída</option>
+                        </select>
+                      </div>
+                      <FormField label="Data" type="date" name="date" value={stockForm.date} onChange={handleStockChange} required />
+                      <div className="flex items-center justify-between mt-6">
+                        <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                          Registrar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Histórico de Movimentações</h3>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  <ul className="space-y-4">
+                    {stockMovements.length > 0 ? (
+                      stockMovements.map((m) => {
+                        const product = products.find(p => p.id === m.productId);
+                        const isEntry = m.type === 'entrada';
+                        const Icon = isEntry ? ArrowLeft : ArrowRight;
+                        return (
+                          <li key={m.id} className={`p-4 rounded-lg shadow-sm flex items-center justify-between ${isEntry ? 'bg-green-50' : 'bg-red-50'}`}>
+                            <div className="flex items-center space-x-4">
+                              <div className={`p-2 rounded-full ${isEntry ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <p className="font-semibold">{isEntry ? 'Entrada' : 'Saída'} de {m.quantity} unidades de {product?.name || 'Produto Desconhecido'}</p>
+                                <p className="text-sm text-gray-600">Data: {m.date}</p>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <p className="text-gray-500">Nenhuma movimentação registrada ainda.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          case 'compras':
+            const purchaseLabels = purchaseOrderLabels[purchaseOrderForm.purchaseType === 'nacional' ? 'pt' : 'en'];
+            const totalOC = purchaseOrderForm.items.reduce((sum, item) => sum + (item.total || 0), 0);
+            const ocCurrencyFormatter = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: purchaseOrderForm.negotiationCurrency,
+                currencyDisplay: 'code'
+            });
+
+            if (isAddingOc) {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Nova Ordem de Compra</h2>
+                    <button
+                      onClick={() => setIsAddingOc(false)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <form onSubmit={handleSubmitPurchaseOrder} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label={purchaseLabels.ocNumber} type="text" name="ocNumber" value={purchaseOrderForm.ocNumber} onChange={handlePurchaseOrderChange} required />
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="supplierId">
+                        {purchaseLabels.supplier}
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="supplierId"
+                        name="supplierId"
+                        value={purchaseOrderForm.supplierId}
+                        onChange={handlePurchaseOrderChange}
+                        required
+                      >
+                        <option value="">{purchaseLabels.selectSupplier}</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.companyName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        {purchaseLabels.purchaseType}
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        name="purchaseType"
+                        value={purchaseOrderForm.purchaseType}
+                        onChange={handlePurchaseOrderChange}
+                      >
+                        {purchaseOrderLabels.pt.purchaseTypes.map(type => (
+                          <option key={type.value} value={type.value}>{purchaseLabels.purchaseTypes.find(l => l.value === type.value)?.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {purchaseOrderForm.purchaseType === 'internacional' && (
+                      <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                          {purchaseLabels.negotiationCurrency}
+                        </label>
+                        <select
+                          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          name="negotiationCurrency"
+                          value={purchaseOrderForm.negotiationCurrency}
+                          onChange={handlePurchaseOrderChange}
+                        >
+                          <option value="USD">USD - Dólar Americano</option>
+                          <option value="CNY">CNY - Yuan Chinês</option>
+                          <option value="EUR">EUR - Euro</option>
+                        </select>
+                      </div>
+                    )}
+                    <FormField label={purchaseLabels.date} type="date" name="date" value={purchaseOrderForm.date} onChange={handlePurchaseOrderChange} required />
+                    
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">{purchaseLabels.items}</h4>
+                    {purchaseOrderForm.items.map((item, index) => (
+                      <div key={index} className="bg-gray-100 p-4 rounded-md mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-gray-700 text-sm font-bold mb-2">
+                            {purchaseLabels.product}
+                          </label>
+                          <select
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            name="productId"
+                            value={item.productId}
+                            onChange={(e) => handlePurchaseOrderItemChange(index, e)}
+                            required
+                          >
+                            <option value="">{purchaseLabels.selectProduct}</option>
+                            {products.map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <FormField 
+                          label={purchaseLabels.quantity} 
+                          type="number" 
+                          name="quantity" 
+                          value={item.quantity} 
+                          onChange={(e) => handlePurchaseOrderItemChange(index, e)} 
+                          placeholder="Ex: 100" 
+                          required 
+                        />
+                        <FormField 
+                          label={purchaseLabels.unitPrice} 
+                          type="number" 
+                          name="unitPrice" 
+                          value={item.unitPrice} 
+                          onChange={(e) => handlePurchaseOrderItemChange(index, e)} 
+                          placeholder="Ex: 50.00" 
+                          step="0.01" 
+                          currencySymbol={purchaseOrderForm.negotiationCurrency}
+                          required 
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      {purchaseLabels.addItem}
+                    </button>
+                    <div className="mt-4 p-4 bg-gray-200 rounded-lg text-right font-bold text-xl">
+                      {purchaseLabels.totalOC}: {ocCurrencyFormatter.format(totalOC)}
+                    </div>
+                    
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Informações Adicionais</h4>
+                    <FormField label={purchaseLabels.paymentTerms} type="text" name="paymentTerms" value={purchaseOrderForm.paymentTerms} onChange={handlePurchaseOrderChange} placeholder="Ex: Pagamento à vista" />
+                    <FormField label={purchaseLabels.deliveryDeadline} type="text" name="deliveryDeadline" value={purchaseOrderForm.deliveryDeadline} onChange={handlePurchaseOrderChange} placeholder="Ex: 30 dias após a emissão" />
+
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        {purchaseLabels.submit}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              );
+            } else {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Ordens de Compra</h2>
+                    <button
+                      onClick={() => setIsAddingOc(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold p-3 rounded-full shadow-lg transition-colors duration-200"
+                      aria-label="Adicionar Ordem de Compra"
+                    >
+                      <Plus className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  
+                  <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-5 gap-4 pb-2 border-b-2 border-gray-200 font-semibold text-gray-600 text-sm uppercase">
+                      <div>Nº OC</div>
+                      <div>Fornecedor</div>
+                      <div>Data</div>
+                      <div>Tipo</div>
+                      <div className="text-right">Valor Total</div>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {purchaseOrders.length > 0 ? (
+                        purchaseOrders.map((po) => {
+                          const supplier = suppliers.find(s => s.id === po.supplierId);
+                          const orderCurrencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: po.negotiationCurrency });
+                          return (
+                            <div key={po.id} className="grid grid-cols-5 gap-4 items-center p-3 rounded-lg bg-white shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                              <div>{po.ocNumber}</div>
+                              <div>{supplier?.companyName || 'Fornecedor Desconhecido'}</div>
+                              <div>{po.date}</div>
+                              <div>{po.purchaseType === 'nacional' ? 'Nacional' : 'Internacional'}</div>
+                              <div className="font-bold text-lg text-right">{orderCurrencyFormatter.format(po.totalValue)}</div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center">Nenhuma ordem de compra emitida ainda.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          case 'vendas':
+            const salesCurrencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            if (isAddingVenda) {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Novo Pedido de Venda</h2>
+                    <button
+                      onClick={() => setIsAddingVenda(false)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <form onSubmit={handleSubmitSalesOrder} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Número do Pedido" type="text" name="pedidoNumber" value={salesOrderForm.pedidoNumber} onChange={handleSalesOrderChange} required />
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="clientId">
+                        Cliente
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="clientId"
+                        name="clientId"
+                        value={salesOrderForm.clientId}
+                        onChange={handleSalesOrderChange}
+                        required
+                      >
+                        <option value="">Selecione um cliente</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <FormField label="Data" type="date" name="date" value={salesOrderForm.date} onChange={handleSalesOrderChange} required />
+
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Itens do Pedido</h4>
+                    {salesOrderForm.items.map((item, index) => (
+                      <div key={index} className="bg-gray-100 p-4 rounded-md mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-gray-700 text-sm font-bold mb-2">
+                            Produto
+                          </label>
+                          <select
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            name="productId"
+                            value={item.productId}
+                            onChange={(e) => handleSalesOrderItemChange(index, e)}
+                            required
+                          >
+                            <option value="">Selecione um produto</option>
+                            {products.map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <FormField 
+                          label="Quantidade" 
+                          type="number" 
+                          name="quantity" 
+                          value={item.quantity} 
+                          onChange={(e) => handleSalesOrderItemChange(index, e)} 
+                          placeholder="Ex: 50" 
+                          required 
+                        />
+                        <FormField 
+                          label="Preço Unitário" 
+                          type="number" 
+                          name="unitPrice" 
+                          value={item.unitPrice} 
+                          onChange={(e) => handleSalesOrderItemChange(index, e)} 
+                          placeholder="Ex: 750.00" 
+                          step="0.01" 
+                          currencySymbol="R$"
+                          required 
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddSalesItem}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Adicionar Item
+                    </button>
+                    <div className="mt-4 p-4 bg-gray-200 rounded-lg text-right font-bold text-xl">
+                      Valor Total do Pedido: {salesCurrencyFormatter.format(totalSalesOrder)}
+                    </div>
+                    
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Informações Adicionais</h4>
+                    <FormField label="Condições de Pagamento" type="text" name="paymentTerms" value={salesOrderForm.paymentTerms} onChange={handleSalesOrderChange} placeholder="Ex: Cartão de crédito em 3x" />
+                    <FormField label="Prazo de Entrega" type="text" name="deliveryDeadline" value={salesOrderForm.deliveryDeadline} onChange={handleSalesOrderChange} placeholder="Ex: 5 dias úteis" />
+
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Criar Pedido de Venda
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              );
+            } else {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Vendas</h2>
+                    <button
+                      onClick={() => setIsAddingVenda(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold p-3 rounded-full shadow-lg transition-colors duration-200"
+                      aria-label="Adicionar Pedido de Venda"
+                    >
+                      <Plus className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  
+                  <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-5 gap-4 pb-2 border-b-2 border-gray-200 font-semibold text-gray-600 text-sm uppercase">
+                      <div>Nº Pedido</div>
+                      <div>Cliente</div>
+                      <div>Data</div>
+                      <div>Status</div>
+                      <div className="text-right">Ações</div>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {salesOrders.length > 0 ? (
+                        salesOrders.map((so) => {
+                          const client = clients.find(c => c.id === so.clientId);
+                          const isApproved = so.status === 'Aprovado';
+                          const statusColor = isApproved ? 'text-green-600' : 'text-yellow-600';
+                          const StatusIcon = isApproved ? CheckCircle : Clock;
+                          return (
+                            <div key={so.id} className="grid grid-cols-5 gap-4 items-center p-3 rounded-lg bg-white shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                              <div>{so.pedidoNumber}</div>
+                              <div>{client?.name || 'Cliente Desconhecido'}</div>
+                              <div>{so.date}</div>
+                              <div className={`flex items-center space-x-1 ${statusColor}`}>
+                                <StatusIcon className="h-4 w-4" />
+                                <span>{so.status}</span>
+                              </div>
+                              <div className="text-right">
+                                {!isApproved && (
+                                  <button
+                                    onClick={() => handleApproveSalesOrder(so.id)}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-full text-xs transition-colors duration-200"
+                                  >
+                                    Aprovar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center">Nenhum pedido de venda registrado ainda.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          case 'importacao':
+            const freightTypes = [{ value: 'maritimo', label: 'Marítimo' }, { value: 'aereo', label: 'Aéreo' }, { value: 'rodoviario', label: 'Rodoviário' }];
+            const contractCurrencies = [{ value: 'USD', label: 'USD - Dólar Americano' }, { value: 'CNY', label: 'CNY - Yuan Chinês' }, { value: 'EUR', label: 'EUR - Euro' }];
+            
+            if (isAddingImport) {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Novo Processo de Importação</h2>
+                    <button
+                      onClick={() => setIsAddingImport(false)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <form onSubmit={handleSubmitImportProcess} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Número do Processo" type="text" name="processNumber" value={importProcessForm.processNumber} onChange={handleImportProcessChange} required />
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="supplierId">
+                        Fornecedor
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="supplierId"
+                        name="supplierId"
+                        value={importProcessForm.supplierId}
+                        onChange={handleImportProcessChange}
+                        required
+                      >
+                        <option value="">Selecione um fornecedor</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.companyName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="freightType">
+                        Tipo de Frete
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="freightType"
+                        name="freightType"
+                        value={importProcessForm.freightType}
+                        onChange={handleImportProcessChange}
+                        required
+                      >
+                        {freightTypes.map(type => (
+                          <option key={type.value} value={type.value}>{type.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <FormField label="Data de Início" type="date" name="date" value={importProcessForm.date} onChange={handleImportProcessChange} required />
+                    
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Contratos de Câmbio</h4>
+                    {importProcessForm.contracts.map((contract, index) => (
+                      <div key={index} className="bg-gray-100 p-4 rounded-md mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField label="Nº Contrato" type="text" name="number" value={contract.number} onChange={(e) => handleImportContractChange(index, e)} placeholder="Ex: CC-12345" />
+                        <FormField label="Data" type="date" name="date" value={contract.date} onChange={(e) => handleImportContractChange(index, e)} required />
+                        <div className="col-span-2 grid grid-cols-2 gap-4">
+                          <FormField label="Valor" type="number" name="value" value={contract.value} onChange={(e) => handleImportContractChange(index, e)} placeholder="Ex: 10000.00" step="0.01" required />
+                          <div>
+                            <label className="block text-gray-700 text-sm font-bold mb-2">Moeda</label>
+                            <select
+                              className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                              name="currency"
+                              value={contract.currency}
+                              onChange={(e) => handleImportContractChange(index, e)}
+                            >
+                              {contractCurrencies.map(c => (
+                                <option key={c.value} value={c.value}>{c.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddImportContract}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Adicionar Contrato
+                    </button>
+
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Itens Importados</h4>
+                    {importProcessForm.items.map((item, index) => (
+                      <div key={index} className="bg-gray-100 p-4 rounded-md mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-gray-700 text-sm font-bold mb-2">Produto</label>
+                          <select
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            name="productId"
+                            value={item.productId}
+                            onChange={(e) => handleImportItemChange(index, e)}
+                            required
+                          >
+                            <option value="">Selecione um produto</option>
+                            {products.map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <FormField label="Quantidade" type="number" name="quantity" value={item.quantity} onChange={(e) => handleImportItemChange(index, e)} placeholder="Ex: 50" required />
+                        <FormField label="Preço Unitário" type="number" name="unitPrice" value={item.unitPrice} onChange={(e) => handleImportItemChange(index, e)} placeholder="Ex: 100.00" step="0.01" required />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddImportItem}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Adicionar Item
+                    </button>
+
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Criar Processo de Importação
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              );
+            } else {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Processos de Importação</h2>
+                    <button
+                      onClick={() => setIsAddingImport(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold p-3 rounded-full shadow-lg transition-colors duration-200"
+                      aria-label="Adicionar Processo de Importação"
+                    >
+                      <Plus className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  
+                  <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-6 gap-4 pb-2 border-b-2 border-gray-200 font-semibold text-gray-600 text-sm uppercase">
+                      <div>Nº Processo</div>
+                      <div>Fornecedor</div>
+                      <div>Data</div>
+                      <div>Status</div>
+                      <div>Custo Final</div>
+                      <div className="text-right">Ações</div>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {importProcesses.length > 0 ? (
+                        importProcesses.map((p) => {
+                          const supplier = suppliers.find(s => s.id === p.supplierId);
+                          const isFinalized = p.status === 'Finalizado';
+                          const statusColor = isFinalized ? 'text-green-600' : 'text-yellow-600';
+                          const StatusIcon = isFinalized ? CheckCircle : Briefcase;
+                          return (
+                            <div key={p.id} className="grid grid-cols-6 gap-4 items-center p-3 rounded-lg bg-white shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                              <div>{p.processNumber}</div>
+                              <div>{supplier?.companyName || 'Fornecedor Desconhecido'}</div>
+                              <div>{p.date}</div>
+                              <div className={`flex items-center space-x-1 ${statusColor}`}>
+                                <StatusIcon className="h-4 w-4" />
+                                <span>{p.status}</span>
+                              </div>
+                              <div>{isFinalized ? formatCurrency(p.finalCost) : 'Em Andamento'}</div>
+                              <div className="text-right">
+                                {!isFinalized && (
+                                  <button
+                                    onClick={() => handleFinalizeImportProcess(p.id)}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-full text-xs transition-colors duration-200"
+                                  >
+                                    Finalizar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center">Nenhum processo de importação registrado ainda.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          case 'producao':
+            const productsToProduce = products.filter(p => !p.supplier);
+            const rawMaterials = products.filter(p => p.supplier);
+
+            if (isAddingOp) {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Nova Ordem de Produção</h2>
+                    <button
+                      onClick={() => setIsAddingOp(false)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <form onSubmit={handleSubmitProductionOrder} className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <FormField label="Número da OP" type="text" name="opNumber" value={productionOrderForm.opNumber} onChange={handleProductionOrderChange} required />
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="productToProduceId">
+                        Produto a Produzir
+                      </label>
+                      <select
+                        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="productToProduceId"
+                        name="productToProduceId"
+                        value={productionOrderForm.productToProduceId}
+                        onChange={handleProductionOrderChange}
+                        required
+                      >
+                        <option value="">Selecione um produto</option>
+                        {productsToProduce.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <FormField label="Quantidade a Produzir" type="number" name="quantity" value={productionOrderForm.quantity} onChange={handleProductionOrderChange} placeholder="Ex: 50" required />
+                    <FormField label="Data de Início" type="date" name="startDate" value={productionOrderForm.startDate} onChange={handleProductionOrderChange} required />
+                    <FormField label="Data de Conclusão Prevista" type="date" name="endDate" value={productionOrderForm.endDate} onChange={handleProductionOrderChange} />
+
+                    <h4 className="text-lg font-semibold text-gray-800 mt-6 mb-2">Ficha Técnica (Matéria-Prima)</h4>
+                    {productionOrderForm.rawMaterials.map((material, index) => (
+                      <div key={index} className="bg-gray-100 p-4 rounded-md mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-gray-700 text-sm font-bold mb-2">Matéria-Prima</label>
+                          <select
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            name="materialId"
+                            value={material.materialId}
+                            onChange={(e) => handleRawMaterialChange(index, e)}
+                          >
+                            <option value="">Selecione um insumo</option>
+                            {rawMaterials.map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <FormField label="Quantidade Necessária" type="number" name="quantityNeeded" value={material.quantityNeeded} onChange={(e) => handleRawMaterialChange(index, e)} placeholder="Ex: 10" />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddRawMaterial}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Adicionar Matéria-Prima
+                    </button>
+
+                    <div className="flex items-center justify-between mt-6">
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Criar Ordem de Produção
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              );
+            } else {
+              return (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Ordens de Produção</h2>
+                    <button
+                      onClick={() => setIsAddingOp(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold p-3 rounded-full shadow-lg transition-colors duration-200"
+                      aria-label="Adicionar Ordem de Produção"
+                    >
+                      <Plus className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <p className="mb-2 text-sm text-gray-600">ID de Usuário: {userId}</p>
+                  
+                  <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-4 gap-4 pb-2 border-b-2 border-gray-200 font-semibold text-gray-600 text-sm uppercase">
+                      <div>Nº OP</div>
+                      <div>Produto</div>
+                      <div>Quantidade</div>
+                      <div className="text-right">Status</div>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {productionOrders.length > 0 ? (
+                        productionOrders.map((op) => {
+                          const product = products.find(p => p.id === op.productToProduceId);
+                          const isPending = op.status === 'Pendente';
+                          const statusColor = isPending ? 'text-yellow-600' : 'text-green-600';
+                          const StatusIcon = isPending ? Clock : CheckCircle;
+                          return (
+                            <div key={op.id} className="grid grid-cols-4 gap-4 items-center p-3 rounded-lg bg-white shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                              <div>{op.opNumber}</div>
+                              <div>{product?.name || 'Produto Desconhecido'}</div>
+                              <div>{op.quantity}</div>
+                              <div className={`flex items-center justify-end space-x-1 ${statusColor}`}>
+                                <StatusIcon className="h-4 w-4" />
+                                <span>{op.status}</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center">Nenhuma ordem de produção registrada ainda.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          default:
+            return null;
+        }
+      };
+
+      return (
+        <div className="flex min-h-screen bg-gray-100 font-sans text-gray-800">
+          <aside className="w-64 bg-gray-900 text-white flex-shrink-0 p-4 shadow-lg rounded-r-lg">
+            <div className="flex items-center justify-center h-16">
+              <span className="text-xl font-bold text-blue-500">Sistema ERP</span>
+            </div>
+            <nav className="mt-8">
+              {modules.map((module) => (
+                <React.Fragment key={module.id}>
+                  {module.sub ? (
+                    <>
+                      <button
+                        className={`flex items-center w-full p-3 my-1 rounded-md transition-colors duration-200 text-gray-300 hover:bg-gray-700`}
+                        onClick={() => setActiveModule(module.id)}
+                      >
+                        <module.icon className="h-5 w-5" />
+                        <span className="ml-4 text-sm font-medium">{module.label}</span>
+                      </button>
+                      <div className="pl-8">
+                        {module.sub.map((subModule) => (
+                          <SidebarItem
+                            key={subModule.id}
+                            icon={() => {
+                              switch (subModule.id) {
+                                case 'produtos': return <Package />;
+                                case 'clientes': return <Users />;
+                                case 'fornecedores': return <Building />;
+                                default: return <Package />;
+                              }
+                            }}
+                            label={subModule.label}
+                            isActive={activeModule === subModule.id}
+                            onClick={() => setActiveModule(subModule.id)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <SidebarItem
+                      icon={module.icon}
+                      label={module.label}
+                      isActive={activeModule === module.id}
+                      onClick={() => setActiveModule(module.id)}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </nav>
+          </aside>
+
+          <main className="flex-1 p-8 overflow-y-auto">
+            <div className="bg-white p-8 rounded-lg shadow-xl min-h-[calc(100vh-64px)]">
+              {renderContent()}
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
